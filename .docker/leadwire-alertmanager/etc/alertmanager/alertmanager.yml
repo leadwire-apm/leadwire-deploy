@@ -1,0 +1,20 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'AlertManager <contact@leadwire.io>'
+  smtp_require_tls: true
+  smtp_hello: 'alertmanager'
+  smtp_auth_username: 'contact@leadwire.io'
+  smtp_auth_password: 'changeit'
+
+route:
+  group_by: ['instance', 'alert']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: team-1
+
+receivers:
+  - name: 'team-1'
+    email_configs:
+      - to: 'contact@leadwire.io'
+    slack_configs:

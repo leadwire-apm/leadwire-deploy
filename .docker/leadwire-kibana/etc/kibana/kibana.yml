@@ -1,0 +1,33 @@
+server.port: 5601 
+server.host: "0.0.0.0"
+elasticsearch.hosts: ["https://leadwire-node1:9200"]
+logging.verbose: false
+logging.dest: /var/log/kibana/kibana.log
+elasticsearch.password: "kibanaserver"
+elasticsearch.ssl.verificationMode: none
+elasticsearch.username: "kibanaserver"
+elasticsearch.requestHeadersWhitelist: ["securitytenant", "Authorization", "x-forwarded-for", "x-proxy-user", "x-proxy-roles"]
+opendistro_security.auth.type: "proxy"
+opendistro_security.multitenancy.enabled: true
+opendistro_security.multitenancy.tenants.enable_global: false
+opendistro_security.multitenancy.tenants.enable_private: true
+opendistro_security.multitenancy.tenants.preferred: ["Private"]
+opendistro_security.multitenancy.enable_filter: false
+telemetry.enabled: false
+sentinl:
+  es:
+    host: leadwire-node1
+    port: 9200
+    protocol: https
+  settings:
+    authentication:
+      enabled: true 
+      username: 'admin'
+      password: 'admin'
+    email:
+      active: true
+      user: contact@leadwire.io
+      port: 465
+      password: changeit
+      host: smtp.gmail.com
+      ssl: true

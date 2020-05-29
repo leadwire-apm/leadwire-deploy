@@ -1,0 +1,219 @@
+version: '3'
+services:
+  leadwire-portail:
+    image: leadwire/apm-leadwire-portail:1.3.9
+    container_name: leadwire-portail
+    environment:
+      LEADWIRE_ADMIN_PASSWORD: {SSHA}KrVJR86xuoezxyDgOgrq7haWg2QgPbJ2
+      LEADWIRE_ADMIN_EMAIL: contact@leadwire.io
+      LEADWIRE_CLUSTER_NAME: leadwire-cluster
+      LEADWIRE_CLUSTER_VERSION: 7.6.1
+      LEADWIRE_SETUP_CLUSTER: 'true'
+      LEADWIRE_SETUP_DEMO: 'true'
+      LEADWIRE_SETUP_LDAP: 'true'
+      LEADWIRE_ISM_ROLLOVER_SETUP: 'false'
+      LEADWIRE_ISM_DELETE_MIN_INDEX_AGE: 7d
+      LEADWIRE_ISM_MIN_SIZE: 5gb
+      LEADWIRE_ISM_MIN_DOC_COUNT: 1000000
+      LEADWIRE_ISM_MIN_INDEX_AGE: 7d
+      LEADWIRE_DATABASE_NAME: leadwire
+      LEADWIRE_DATABASE_HOST: leadwire-mongodb
+      LEADWIRE_DATABASE_PORT: 27017
+      LEADWIRE_DATABASE_USER: admin
+      LEADWIRE_DATABASE_PASSWORD: admin
+      LEADWIRE_APP_DOMAIN: apm.leadwire.io
+      LEADWIRE_APP_SCHEME: https
+      LEADWIRE_SUPER_USER_ADMIN_NAME: admin
+      LEADWIRE_MAILER_HOST: smtp.gmail.com
+      LEADWIRE_MAILER_PORT: 465
+      LEADWIRE_MAILER_TRANSPORT: gmail
+      LEADWIRE_MAILER_USER: contact@leadwire.io
+      LEADWIRE_MAILER_ENCRYPTION: ssl
+      LEADWIRE_MAILER_PASSWORD: changeit
+      LEADWIRE_JWT_TOKEN_SECRET: token123456789
+      LEADWIRE_KIBANA_HOST: http://leadwire-kibana
+      LEADWIRE_KIBANA_PORT: 5601
+      LEADWIRE_KIBANA_IFRAME_HOST: https://kibana.leadwire.io
+      LEADWIRE_KIBANA_IFRAME_PORT: 443
+      LEADWIRE_KIBANA_ADMIN_USERNAME: admin
+      LEADWIRE_KIBANA_ADMIN_UUID: admin
+      LEADWIRE_ES_USERNAME: admin
+      LEADWIRE_ES_PASSWORD: admin
+      LEADWIRE_ES_HOST: https://leadwire-node1
+      LEADWIRE_ES_PORT: 9200
+      LEADWIRE_SOCKET_IO_PORT: 443
+      LEADWIRE_SOCKET_DOMAIN: io.leadwire.io
+      LEADWIRE_SOCKET_SCHEME: https
+      LEADWIRE_LOGOUT_URL: https://auth.leadwire.io/?logout=1
+      LEADWIRE_PLATFORM_NAME: leadwire
+      LEADWIRE_LOGIN_METHOD: proxy
+      LEADWIRE_COMPAGNE_ENABLED: 'false'
+      LEADWIRE_JENKINS_URL: unused
+      LEADWIRE_LDAP_HOST: leadwire-ldap
+      LEADWIRE_LDAP_PORT: 389
+      LEADWIRE_LDAP_DN_USER: cn=admin,dc=leadwire,dc=io
+      LEADWIRE_LDAP_PASSWORD: admin
+      LEADWIRE_GITHUB_CLIENT_SECRET: unused
+      LEADWIRE_GITHUB_CLIENT_ID: unused
+      LEADWIRE_STRIPE_SECRET_KEY: unused
+      LEADWIRE_STRIPE_ENABLED: 'false'
+    networks:
+      - leadwire-net
+  leadwire-socket.io:
+    image: leadwire/apm-leadwire-socket-io:1.3
+    container_name: leadwire-socket.io
+    environment:
+      LEADWIRE_SSL_KEY: /certificates/server.key
+      LEADWIRE_SSL_CERT: /certificates/server.pem
+      LEADWIRE_SOCKET_IO_PORT: 9000
+    networks:
+      - leadwire-net
+  leadwire-core:
+    image: leadwire/apm-leadwire-core:1.3
+    container_name: leadwire-core
+    privileged: true
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      SSODOMAIN: leadwire.io
+      PORTAL_HOSTNAME: auth.leadwire.io
+      MANAGER_HOSTNAME: manager.leadwire.io
+      HANDLER_HOSTNAME: reload.leadwire.io
+      APM_HOSTNAME: apm.leadwire.io
+      KIBANA_HOSTNAME: kibana.leadwire.io
+      LOGLEVEL: info
+    volumes:
+      - /etc/letsencrypt/:/etc/letsencrypt/
+      - ./.docker/leadwire-core/etc/nginx/conf.d/:/etc/nginx/conf.d/
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - leadwire-net
+  leadwire-ldap:
+    image: leadwire/apm:leadwire-ldap-1.3
+    container_name: leadwire-ldap
+    privileged: true
+    ports:
+      - 389:389
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - leadwire-net
+  leadwire-alertmanager:
+    image: leadwire/apm-leadwire-alertmanager-1.7
+    container_name: alertmanager.leadwire.io
+    privileged: true
+    volumes:
+      - ./.docker/leadwire-alertmanager/etc/alertmanager/:/etc/alertmanager/
+      - ./.docker/leadwire-alertmanager/alertmanager.service:/etc/systemd/system/alertmanager.service
+    networks:
+      - leadwire-net
+  leadwire-mongodb:
+    image: mongo:3.4
+    container_name: leadwire-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    ports:
+      - 27017:27017
+    volumes:
+      - ./.docker/mongodb/initdb.d/:/docker-entrypoint-initdb.d/
+      - ./.docker/mongodb/data/db/:/data/db/
+    networks:
+      - leadwire-net
+  leadwire-node1:
+    image: amazon/opendistro-for-elasticsearch:1.7.0
+    container_name: leadwire-node1
+    environment:
+      - cluster.name=leadwire-cluster
+      - node.name=leadwire-node1
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the Elasticsearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - leadwire-data1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      - leadwire-net
+  leadwire-node2:
+    image: amazon/opendistro-for-elasticsearch:1.7.0
+    container_name: leadwire-node2
+    environment:
+      - cluster.name=leadwire-cluster
+      - node.name=leadwire-node2
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - leadwire-data2:/usr/share/elasticsearch/data
+    networks:
+      - leadwire-net
+  leadwire-node3:
+    image: amazon/opendistro-for-elasticsearch:1.7.0
+    container_name: leadwire-node3
+    environment:
+      - cluster.name=leadwire-cluster
+      - node.name=leadwire-node3
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - leadwire-data3:/usr/share/elasticsearch/data
+    networks:
+      - leadwire-net
+  leadwire-kibana:
+    image: leadwire/apm-leadwire-kibana:1.7
+    container_name: leadwire-kibana
+    privileged: true
+    ports:
+      - 8008:8008
+    environment:
+      ELASTICSEARCH_URL: https://leadwire-node1:9200
+      ELASTICSEARCH_HOSTS: https://leadwire-node1:9200
+    volumes:
+      - .docker/leadwire-kibana/etc/kibana/kibana.yml:/etc/kibana/kibana.yml
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - leadwire-net
+  leadwire-grafana:
+    image: leadwire/apm-leadwire-grafana:1.7
+    container_name: leadwire-grafana
+    privileged: true
+    volumes:
+      - /etc/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - leadwire-net
+volumes:
+  leadwire-data1:
+  leadwire-data2:
+  leadwire-data3:
+networks:
+  leadwire-net:
+
