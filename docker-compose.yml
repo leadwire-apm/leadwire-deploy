@@ -1,10 +1,10 @@
 version: '3'
 services:
   leadwire-portail:
-    image: leadwire/apm-leadwire-portail:1.3.9
+    image: leadwire/apm-leadwire-portail:1.3.9b2
     container_name: leadwire-portail
     environment:
-      LEADWIRE_ADMIN_PASSWORD: {SSHA}KrVJR86xuoezxyDgOgrq7haWg2QgPbJ2
+      LEADWIRE_ADMIN_PASSWORD: '{SSHA}KrVJR86xuoezxyDgOgrq7haWg2QgPbJ2'
       LEADWIRE_ADMIN_EMAIL: contact@leadwire.io
       LEADWIRE_CLUSTER_NAME: leadwire-cluster
       LEADWIRE_CLUSTER_VERSION: 7.6.1
@@ -60,7 +60,7 @@ services:
     networks:
       - leadwire-net
   leadwire-socket.io:
-    image: leadwire/apm-leadwire-socket-io:1.3
+    image: leadwire/apm-leadwire-socket-io:1.3.9
     container_name: leadwire-socket.io
     environment:
       LEADWIRE_SSL_KEY: /certificates/server.key
@@ -90,21 +90,23 @@ services:
     networks:
       - leadwire-net
   leadwire-ldap:
-    image: leadwire/apm:leadwire-ldap-1.3
+    image: leadwire/apm-leadwire-ldap:1.3
     container_name: leadwire-ldap
     privileged: true
     ports:
       - 389:389
     volumes:
+      - leadwire-ldapdata:/var/lib/ldap
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - leadwire-net
   leadwire-alertmanager:
-    image: leadwire/apm-leadwire-alertmanager-1.7
+    image: leadwire/apm-leadwire-alertmanager-0.17
     container_name: alertmanager.leadwire.io
     privileged: true
     volumes:
-      - ./.docker/leadwire-alertmanager/etc/alertmanager/:/etc/alertmanager/
+      - ./.docker/leadwire-alertmanager/etc/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - leadwire-alertmanagerdata:/etc/alertmanager/data/
       - ./.docker/leadwire-alertmanager/alertmanager.service:/etc/systemd/system/alertmanager.service
     networks:
       - leadwire-net
@@ -118,7 +120,7 @@ services:
       - 27017:27017
     volumes:
       - ./.docker/mongodb/initdb.d/:/docker-entrypoint-initdb.d/
-      - ./.docker/mongodb/data/db/:/data/db/
+      - leadwire-mongodata:/data/db/
     networks:
       - leadwire-net
   leadwire-node1:
@@ -130,7 +132,8 @@ services:
       - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
       - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
       - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - opendistro_security.unsupported.restapi.allow_securityconfig_modification=true
     ulimits:
       memlock:
         soft: -1
@@ -154,7 +157,7 @@ services:
       - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
       - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     ulimits:
       memlock:
         soft: -1
@@ -175,7 +178,7 @@ services:
       - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
       - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     ulimits:
       memlock:
         soft: -1
@@ -202,11 +205,12 @@ services:
     networks:
       - leadwire-net
   leadwire-grafana:
-    image: leadwire/apm-leadwire-grafana:1.7
+    image: leadwire/apm-leadwire-grafana:7.0
     container_name: leadwire-grafana
     privileged: true
     volumes:
-      - /etc/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - leadwire-grafanadata:/var/lib/grafana
+      - .docker/leadwire-grafana/etc/grafana/grafana.ini:/etc/grafana/grafana.ini
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - leadwire-net
@@ -214,6 +218,10 @@ volumes:
   leadwire-data1:
   leadwire-data2:
   leadwire-data3:
+  leadwire-mongodata:
+  leadwire-grafanadata:
+  leadwire-alertmanagerdata:
+  leadwire-ldapdata:
 networks:
   leadwire-net:
 
