@@ -1,8 +1,7 @@
 version: '3'
 services:
   leadwire-portail:
-    image: leadwire/apm-leadwire-portail:1.3.9b2
-    container_name: leadwire-portail
+    image: leadwire/apm-leadwire-portail:1.0.0
     environment:
       LEADWIRE_ADMIN_PASSWORD: '{SSHA}KrVJR86xuoezxyDgOgrq7haWg2QgPbJ2'
       LEADWIRE_ADMIN_EMAIL: contact@leadwire.io
@@ -17,7 +16,7 @@ services:
       LEADWIRE_ISM_MIN_DOC_COUNT: 1000000
       LEADWIRE_ISM_MIN_INDEX_AGE: 7d
       LEADWIRE_DATABASE_NAME: leadwire
-      LEADWIRE_DATABASE_HOST: leadwire-mongodb
+      LEADWIRE_DATABASE_HOST: leadwire_leadwire-mongodb
       LEADWIRE_DATABASE_PORT: 27017
       LEADWIRE_DATABASE_USER: admin
       LEADWIRE_DATABASE_PASSWORD: admin
@@ -31,7 +30,7 @@ services:
       LEADWIRE_MAILER_ENCRYPTION: ssl
       LEADWIRE_MAILER_PASSWORD: changeit
       LEADWIRE_JWT_TOKEN_SECRET: token123456789
-      LEADWIRE_KIBANA_HOST: http://leadwire-kibana
+      LEADWIRE_KIBANA_HOST: http://leadwire_leadwire-kibana
       LEADWIRE_KIBANA_PORT: 5601
       LEADWIRE_KIBANA_IFRAME_HOST: https://kibana.leadwire.io
       LEADWIRE_KIBANA_IFRAME_PORT: 443
@@ -39,7 +38,7 @@ services:
       LEADWIRE_KIBANA_ADMIN_UUID: admin
       LEADWIRE_ES_USERNAME: admin
       LEADWIRE_ES_PASSWORD: admin
-      LEADWIRE_ES_HOST: https://leadwire-node1
+      LEADWIRE_ES_HOST: https://leadwire_leadwire-node1
       LEADWIRE_ES_PORT: 9200
       LEADWIRE_SOCKET_IO_PORT: 443
       LEADWIRE_SOCKET_DOMAIN: io.leadwire.io
@@ -49,7 +48,7 @@ services:
       LEADWIRE_LOGIN_METHOD: proxy
       LEADWIRE_COMPAGNE_ENABLED: 'false'
       LEADWIRE_JENKINS_URL: unused
-      LEADWIRE_LDAP_HOST: leadwire-ldap
+      LEADWIRE_LDAP_HOST: leadwire_leadwire-ldap
       LEADWIRE_LDAP_PORT: 389
       LEADWIRE_LDAP_DN_USER: cn=admin,dc=leadwire,dc=io
       LEADWIRE_LDAP_PASSWORD: admin
@@ -59,9 +58,12 @@ services:
       LEADWIRE_STRIPE_ENABLED: 'false'
     networks:
       - leadwire-net
-  leadwire-socket.io:
-    image: leadwire/apm-leadwire-socket-io:1.3.9
-    container_name: leadwire-socket.io
+    depends_on:
+      - "leadwire_leadwire-mongodb"
+      - "leadwire_leadwire-node1"
+      - "leadwire_leadwire-ldap"
+  leadwire-socket-io:
+    image: leadwire/apm-leadwire-socket.io:1.0.0
     environment:
       LEADWIRE_SSL_KEY: /certificates/server.key
       LEADWIRE_SSL_CERT: /certificates/server.pem
@@ -69,9 +71,14 @@ services:
     networks:
       - leadwire-net
   leadwire-core:
-    image: leadwire/apm-leadwire-core:1.3
-    container_name: leadwire-core
-    privileged: true
+    image: leadwire/apm-leadwire-core:1.0.0
+    depends_on:
+      - "leadwire_leadwire-node1"
+      - "leadwire_leadwire-kibana"
+      - "leadwire_leadwire-alertmanager"
+      - "leadwire_leadwire-portail"
+      - "leadwire_leadwire-socket-io"
+      - "leadwire_leadwire-grafana"
     ports:
       - 80:80
       - 443:443
@@ -86,33 +93,27 @@ services:
     volumes:
       - /etc/letsencrypt/:/etc/letsencrypt/
       - ./.docker/leadwire-core/etc/nginx/conf.d/:/etc/nginx/conf.d/
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - leadwire-net
   leadwire-ldap:
-    image: leadwire/apm-leadwire-ldap:1.3
-    container_name: leadwire-ldap
-    privileged: true
+    image: leadwire/apm-leadwire-ldap:1.0.0
     ports:
       - 389:389
     volumes:
       - leadwire-ldapdata:/var/lib/ldap
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - leadwire-net
   leadwire-alertmanager:
-    image: leadwire/apm-leadwire-alertmanager-0.17
-    container_name: alertmanager.leadwire.io
-    privileged: true
+    image: prom/alertmanager:latest 
     volumes:
       - ./.docker/leadwire-alertmanager/etc/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
       - leadwire-alertmanagerdata:/etc/alertmanager/data/
-      - ./.docker/leadwire-alertmanager/alertmanager.service:/etc/systemd/system/alertmanager.service
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
     networks:
       - leadwire-net
   leadwire-mongodb:
     image: mongo:3.4
-    container_name: leadwire-mongodb
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
@@ -125,22 +126,13 @@ services:
       - leadwire-net
   leadwire-node1:
     image: amazon/opendistro-for-elasticsearch:1.7.0
-    container_name: leadwire-node1
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire-node1
-      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
-      - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
-      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - node.name=leadwire_leadwire-node1
+      - discovery.seed_hosts=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
+      - cluster.initial_master_nodes=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
       - opendistro_security.unsupported.restapi.allow_securityconfig_modification=true
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536 # maximum number of open files for the Elasticsearch user, set to at least 65536 on modern systems
-        hard: 65536
     volumes:
       - leadwire-data1:/usr/share/elasticsearch/data
     ports:
@@ -150,68 +142,42 @@ services:
       - leadwire-net
   leadwire-node2:
     image: amazon/opendistro-for-elasticsearch:1.7.0
-    container_name: leadwire-node2
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire-node2
-      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
-      - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
-      - bootstrap.memory_lock=true
+      - node.name=leadwire_leadwire-node2
+      - discovery.seed_hosts=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
+      - cluster.initial_master_nodes=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
     volumes:
       - leadwire-data2:/usr/share/elasticsearch/data
     networks:
       - leadwire-net
   leadwire-node3:
     image: amazon/opendistro-for-elasticsearch:1.7.0
-    container_name: leadwire-node3
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire-node3
-      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
-      - cluster.initial_master_nodes=leadwire-node1,leadwire-node2,leadwire-node3
-      - bootstrap.memory_lock=true
+      - node.name=leadwire_leadwire-node3
+      - discovery.seed_hosts=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
+      - cluster.initial_master_nodes=leadwire_leadwire_node1,leadwire_leadwire-node2,leadwire_leadwire-node3
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
     volumes:
       - leadwire-data3:/usr/share/elasticsearch/data
     networks:
       - leadwire-net
   leadwire-kibana:
-    image: leadwire/apm-leadwire-kibana:1.7
-    container_name: leadwire-kibana
-    privileged: true
-    ports:
-      - 8008:8008
+    image: leadwire/apm-leadwire-kibana:1.0.0
     environment:
-      ELASTICSEARCH_URL: https://leadwire-node1:9200
-      ELASTICSEARCH_HOSTS: https://leadwire-node1:9200
+      ELASTICSEARCH_URL: https://leadwire_leadwire-node1:9200
+      ELASTICSEARCH_HOSTS: https://leadwire_leadwire-node1:9200
     volumes:
-      - .docker/leadwire-kibana/etc/kibana/kibana.yml:/etc/kibana/kibana.yml
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - .docker/leadwire-kibana/usr/share/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
     networks:
       - leadwire-net
   leadwire-grafana:
-    image: leadwire/apm-leadwire-grafana:7.0
-    container_name: leadwire-grafana
-    privileged: true
+    image: grafana/grafana:latest
     volumes:
       - leadwire-grafanadata:/var/lib/grafana
       - .docker/leadwire-grafana/etc/grafana/grafana.ini:/etc/grafana/grafana.ini
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - leadwire-net
 volumes:
