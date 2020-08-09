@@ -1,2 +1,6 @@
+# swarm init
+```docker swarm init```
+
+
 # leadwire-deploy
-docker compose deployment
+```docker stack deploy leadwire --compose-file docker-compose.yml```
