@@ -58,6 +58,8 @@ services:
       LEADWIRE_STRIPE_ENABLED: 'false'
     networks:
       - leadwire-net
+    volumes:
+      - C:\Users\dhib\VSCodeRepository\leadwire-portail:/usr/share/leadwire-portail/
     depends_on:
       - "leadwire_leadwire-mongodb"
       - "leadwire_leadwire-node1"
@@ -83,7 +85,7 @@ services:
       - 80:80
       - 443:443
     environment:
-      SSODOMAIN: test.leadwire.io
+      SSODOMAIN: leadwire.io
       PORTAL_HOSTNAME: auth.test.leadwire.io
       MANAGER_HOSTNAME: manager.test.leadwire.io
       HANDLER_HOSTNAME: reload.test.leadwire.io
@@ -91,7 +93,6 @@ services:
       KIBANA_HOSTNAME: kibana.test.leadwire.io
       LOGLEVEL: info
     volumes:
-      - /etc/letsencrypt/:/etc/letsencrypt/
       - ./.docker/leadwire-core/etc/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
       - leadwire-net
