@@ -58,10 +58,6 @@ services:
       LEADWIRE_STRIPE_ENABLED: 'false'
     networks:
       - leadwire-net
-    deploy:
-      placement:
-         constraints:
-            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-socket-io:
     image: leadwire/apm-leadwire-socket.io:1.0.0
     environment:
@@ -70,10 +66,6 @@ services:
       LEADWIRE_SOCKET_IO_PORT: 9000
     networks:
       - leadwire-net
-    deploy:
-      placement:
-         constraints:
-            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-core:
     image: leadwire/apm-leadwire-core:1.0.0
     volumes:
@@ -102,10 +94,6 @@ services:
       - leadwire-ldapdata:/var/lib/ldap
     networks:
       - leadwire-net
-    deploy:
-      placement:
-         constraints:
-            - node.hostname == vps-e716918b.vps.ovh.net.novalocal
   leadwire-alertmanager:
     image: prom/alertmanager:latest 
     volumes:
@@ -127,10 +115,6 @@ services:
       - leadwire-mongodata:/data/db/
     networks:
       - leadwire-net
-    deploy:
-      placement:
-         constraints:
-            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-node1:
     image: amazon/opendistro-for-elasticsearch:1.12.0
     environment:
@@ -142,13 +126,8 @@ services:
       - opendistro_security.unsupported.restapi.allow_securityconfig_modification=true
     volumes:
       - leadwire-data1:/usr/share/elasticsearch/data
-#      - vol1:/tmp
     networks:
       - leadwire-net
-    deploy:
-      placement: 
-         constraints: 
-            - node.hostname == vps-e716918b.vps.ovh.net.novalocal
   leadwire-node2:
     image: amazon/opendistro-for-elasticsearch:1.12.0
     environment:
@@ -159,13 +138,8 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
       - leadwire-data2:/usr/share/elasticsearch/data
-#      - vol1:/tmp
     networks:
       - leadwire-net
-    deploy:
-      placement:
-         constraints:
-            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-node3:
     image: amazon/opendistro-for-elasticsearch:1.12.0
     environment:
@@ -176,13 +150,8 @@ services:
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     volumes:
       - leadwire-data3:/usr/share/elasticsearch/data
-#      - vol1:/tmp
     networks:
       - leadwire-net
-    deploy:
-      placement:
-         constraints:
-            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-kibana:
     image: amazon/opendistro-for-elasticsearch-kibana:1.12.0
     environment:
@@ -208,9 +177,6 @@ volumes:
   leadwire-alertmanagerdata:
   leadwire-ldapdata:
   leadwire-coredata:
-#  vol1:
-#    driver: glusterfs
-#    name: "gfs/vol1"
 networks:
   leadwire-net:
 
