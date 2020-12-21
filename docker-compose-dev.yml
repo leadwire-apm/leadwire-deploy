@@ -30,7 +30,7 @@ services:
       LEADWIRE_MAILER_ENCRYPTION: ssl
       LEADWIRE_MAILER_PASSWORD: changeit
       LEADWIRE_JWT_TOKEN_SECRET: token123456789
-      LEADWIRE_KIBANA_HOST: http://leadwire_leadwire-kibana
+      LEADWIRE_KIBANA_HOST: http://leadwire-kibana
       LEADWIRE_KIBANA_PORT: 5601
       LEADWIRE_KIBANA_IFRAME_HOST: https://kibana.test.leadwire.io
       LEADWIRE_KIBANA_IFRAME_PORT: 443
@@ -38,7 +38,7 @@ services:
       LEADWIRE_KIBANA_ADMIN_UUID: admin
       LEADWIRE_ES_USERNAME: admin
       LEADWIRE_ES_PASSWORD: admin
-      LEADWIRE_ES_HOST: https://leadwire_leadwire-node1
+      LEADWIRE_ES_HOST: https://leadwire-node1
       LEADWIRE_ES_PORT: 9200
       LEADWIRE_SOCKET_IO_PORT: 443
       LEADWIRE_SOCKET_DOMAIN: io.test.leadwire.io
@@ -60,10 +60,6 @@ services:
       - leadwire-net
     volumes:
       - C:\Users\dhib\VSCodeRepository\leadwire-portail:/usr/share/leadwire-portail/
-    depends_on:
-      - "leadwire_leadwire-mongodb"
-      - "leadwire_leadwire-node1"
-      - "leadwire_leadwire-ldap"
   leadwire-socket-io:
     image: leadwire/apm-leadwire-socket.io:1.0.0
     environment:
@@ -74,13 +70,6 @@ services:
       - leadwire-net
   leadwire-core:
     image: leadwire/apm-leadwire-core:1.0.0
-    depends_on:
-      - "leadwire_leadwire-node1"
-      - "leadwire_leadwire-kibana"
-      - "leadwire_leadwire-alertmanager"
-      - "leadwire_leadwire-portail"
-      - "leadwire_leadwire-socket-io"
-      - "leadwire_leadwire-grafana"
     ports:
       - 80:80
       - 443:443
@@ -93,7 +82,6 @@ services:
       KIBANA_HOSTNAME: kibana.test.leadwire.io
       LOGLEVEL: info
     volumes:
-      - /etc/letsencrypt/:/etc/letsencrypt/
       - ./.docker/leadwire-core/etc/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
       - leadwire-net
@@ -130,7 +118,7 @@ services:
     image: amazon/opendistro-for-elasticsearch:1.12.0
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire_leadwire-node1
+      - node.name=leadwire-node1
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
       - opendistro_security.unsupported.restapi.allow_securityconfig_modification=true
@@ -159,8 +147,6 @@ services:
       - leadwire-net
 volumes:
   leadwire-data1:
-  leadwire-data2:
-  leadwire-data3:
   leadwire-mongodata:
   leadwire-grafanadata:
   leadwire-alertmanagerdata:
