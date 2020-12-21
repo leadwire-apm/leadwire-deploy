@@ -3,8 +3,8 @@ global:
   smtp_from: 'AlertManager <contact@leadwire.io>'
   smtp_require_tls: true
   smtp_hello: 'alertmanager'
-  smtp_auth_username: 'contact@leadwire.io'
-  smtp_auth_password: 'changeit'
+  smtp_auth_username: 'wassim.dhib@leadwire.io'
+  smtp_auth_password: 'kdotknhjyorcdimy'
 
 route:
   group_by: ['instance', 'alert']
@@ -16,5 +16,5 @@ route:
 receivers:
   - name: 'team-1'
     email_configs:
-      - to: 'contact@leadwire.io'
+      - to: 'wassimdhib@yahoo.fr'
     slack_configs:

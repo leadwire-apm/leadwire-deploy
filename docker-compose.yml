@@ -1,7 +1,7 @@
-version: '3'
+version: '3.4'
 services:
   leadwire-portail:
-    image: leadwire/apm-leadwire-portail:1.0.0
+    image: leadwire/apm-leadwire-portail:1.0.5
     environment:
       LEADWIRE_ADMIN_PASSWORD: '{SSHA}KrVJR86xuoezxyDgOgrq7haWg2QgPbJ2'
       LEADWIRE_ADMIN_EMAIL: contact@leadwire.io
@@ -26,9 +26,9 @@ services:
       LEADWIRE_MAILER_HOST: smtp.gmail.com
       LEADWIRE_MAILER_PORT: 465
       LEADWIRE_MAILER_TRANSPORT: gmail
-      LEADWIRE_MAILER_USER: contact@leadwire.io
+      LEADWIRE_MAILER_USER: wassim.dhib@leadwire.io
       LEADWIRE_MAILER_ENCRYPTION: ssl
-      LEADWIRE_MAILER_PASSWORD: changeit
+      LEADWIRE_MAILER_PASSWORD: _pass_ 
       LEADWIRE_JWT_TOKEN_SECRET: token123456789
       LEADWIRE_KIBANA_HOST: http://leadwire_leadwire-kibana
       LEADWIRE_KIBANA_PORT: 5601
@@ -58,10 +58,10 @@ services:
       LEADWIRE_STRIPE_ENABLED: 'false'
     networks:
       - leadwire-net
-    depends_on:
-      - "leadwire_leadwire-mongodb"
-      - "leadwire_leadwire-node1"
-      - "leadwire_leadwire-ldap"
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-socket-io:
     image: leadwire/apm-leadwire-socket.io:1.0.0
     environment:
@@ -70,15 +70,14 @@ services:
       LEADWIRE_SOCKET_IO_PORT: 9000
     networks:
       - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-core:
     image: leadwire/apm-leadwire-core:1.0.0
-    depends_on:
-      - "leadwire_leadwire-node1"
-      - "leadwire_leadwire-kibana"
-      - "leadwire_leadwire-alertmanager"
-      - "leadwire_leadwire-portail"
-      - "leadwire_leadwire-socket-io"
-      - "leadwire_leadwire-grafana"
+    volumes:
+      - leadwire-coredata:/var/lib/lemonldap-ng/conf/
     ports:
       - 80:80
       - 443:443
@@ -103,6 +102,10 @@ services:
       - leadwire-ldapdata:/var/lib/ldap
     networks:
       - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == vps-e716918b.vps.ovh.net.novalocal
   leadwire-alertmanager:
     image: prom/alertmanager:latest 
     volumes:
@@ -110,6 +113,7 @@ services:
       - leadwire-alertmanagerdata:/etc/alertmanager/data/
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--web.external-url=https://alert.leadwire.io'
     networks:
       - leadwire-net
   leadwire-mongodb:
@@ -120,55 +124,70 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - ./.docker/mongodb/initdb.d/:/docker-entrypoint-initdb.d/
       - leadwire-mongodata:/data/db/
     networks:
       - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-node1:
-    image: amazon/opendistro-for-elasticsearch:1.7.0
+    image: amazon/opendistro-for-elasticsearch:1.12.0
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire_leadwire-node1
-      - discovery.seed_hosts=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
-      - cluster.initial_master_nodes=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - node.name=leadwire-node1
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - opendistro_security.unsupported.restapi.allow_securityconfig_modification=true
     volumes:
       - leadwire-data1:/usr/share/elasticsearch/data
-    ports:
-      - 9200:9200
-      - 9600:9600 # required for Performance Analyzer
+#      - vol1:/tmp
     networks:
       - leadwire-net
+    deploy:
+      placement: 
+         constraints: 
+            - node.hostname == vps-e716918b.vps.ovh.net.novalocal
   leadwire-node2:
-    image: amazon/opendistro-for-elasticsearch:1.7.0
+    image: amazon/opendistro-for-elasticsearch:1.12.0
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire_leadwire-node2
-      - discovery.seed_hosts=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
-      - cluster.initial_master_nodes=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - node.name=leadwire-node2
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
       - leadwire-data2:/usr/share/elasticsearch/data
+#      - vol1:/tmp
     networks:
       - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-node3:
-    image: amazon/opendistro-for-elasticsearch:1.7.0
+    image: amazon/opendistro-for-elasticsearch:1.12.0
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire_leadwire-node3
-      - discovery.seed_hosts=leadwire_leadwire-node1,leadwire_leadwire-node2,leadwire_leadwire-node3
-      - cluster.initial_master_nodes=leadwire_leadwire_node1,leadwire_leadwire-node2,leadwire_leadwire-node3
+      - node.name=leadwire-node3
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire_node1
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     volumes:
       - leadwire-data3:/usr/share/elasticsearch/data
+#      - vol1:/tmp
     networks:
       - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == vps-df49d022.vps.ovh.net.novalocal
   leadwire-kibana:
-    image: leadwire/apm-leadwire-kibana:1.0.0
+    image: amazon/opendistro-for-elasticsearch-kibana:1.12.0
     environment:
-      ELASTICSEARCH_URL: https://leadwire_leadwire-node1:9200
-      ELASTICSEARCH_HOSTS: https://leadwire_leadwire-node1:9200
+      ELASTICSEARCH_URL: https://leadwire-node1:9200
+      ELASTICSEARCH_HOSTS: https://leadwire-node1:9200
     volumes:
       - .docker/leadwire-kibana/usr/share/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
     networks:
@@ -188,6 +207,10 @@ volumes:
   leadwire-grafanadata:
   leadwire-alertmanagerdata:
   leadwire-ldapdata:
+  leadwire-coredata:
+#  vol1:
+#    driver: glusterfs
+#    name: "gfs/vol1"
 networks:
   leadwire-net:
 
