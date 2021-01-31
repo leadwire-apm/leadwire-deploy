@@ -12,7 +12,12 @@ opendistro_security.multitenancy.enabled: true
 opendistro_security.multitenancy.tenants.enable_global: false
 opendistro_security.multitenancy.tenants.enable_private: true
 opendistro_security.multitenancy.tenants.preferred: ["Private"]
-opendistro_security.multitenancy.enable_filter: false
+opendistro_security.multitenancy.enable_filter: true 
+opendistro_security.readonly_mode.roles: ["kibana_read_only"]
 telemetry.enabled: false
+newsfeed.enabled: false
+telemetry.optIn: false
+security.showInsecureClusterWarning: false
+opendistro_security.cookie.secure: false
 opendistro_security.proxycache.user_header: "x-proxy-user"
 opendistro_security.proxycache.roles_header: "x-proxy-roles"
