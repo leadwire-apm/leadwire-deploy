@@ -86,7 +86,7 @@ services:
 ### PERSISTENT DATA VOLUMES ###
 
   leadwire-core:
-    image: leadwire/apm-leadwire-core:1.0.5
+    image: leadwire/apm-leadwire-core:1.0.6
     ports:
       - 80:80
       - 443:443
@@ -97,11 +97,14 @@ services:
       HANDLER_HOSTNAME: reload.leadwire.io
       APM_HOSTNAME: apm.leadwire.io
       KIBANA_HOSTNAME: kibana.leadwire.io
+      ES_HOSTNAME: es.leadwire.io
+      ALERT_HOSTNAME: alert.leadwire.io
+      IO_HOSTNAME: io.leadwire.io
       LOGLEVEL: info
     volumes:
       - /etc/letsencrypt/:/etc/letsencrypt/
-      - ./.docker/leadwire-core/etc/nginx/conf.d/:/etc/nginx/conf.d/
-      - leadwire-coredata:/var/lib/lemonldap-ng/conf/
+      - ./.docker/leadwire-core/etc/nginx/conf.d/ssl.conf.inc:/etc/nginx/conf.d/ssl.conf.inc
+#      - leadwire-coredata:/var/lib/lemonldap-ng/conf/
     networks:
       - leadwire-net
     deploy:
