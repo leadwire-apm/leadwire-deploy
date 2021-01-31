@@ -16,20 +16,3 @@ opendistro_security.multitenancy.enable_filter: false
 telemetry.enabled: false
 opendistro_security.proxycache.user_header: "x-proxy-user"
 opendistro_security.proxycache.roles_header: "x-proxy-roles"
-#sentinl:
-#  es:
-#    host: leadwire-node1
-#    port: 9200
-#    protocol: https
-#  settings:
-#    authentication:
-#      enabled: true 
-#      username: 'admin'
-#      password: 'admin'
-#    email:
-#      active: true
-#      user: wassim.dhib@leadwire.io
-#      port: 465
-#      password: kdotknhjyorcdimy
-#      host: smtp.gmail.com
-#      ssl: true
