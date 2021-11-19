@@ -32,8 +32,8 @@ services:
     deploy:
       replicas: 1
     environment:
-      LEADWIRE_ADMIN_PASSWORD: "${LEADWIRE_ADMIN_PASSWORD}"
-      LEADWIRE_ADMIN_EMAIL: "${LEADWIRE_ADMIN_EMAIL}"
+      LEADWIRE_ADMIN_PASSWORD: admin
+      LEADWIRE_ADMIN_EMAIL: contact@leadwire.io
       LEADWIRE_CLUSTER_NAME: leadwire-cluster
       LEADWIRE_CLUSTER_VERSION: 7.10.0
       LEADWIRE_SETUP_CLUSTER: 'true'
@@ -48,17 +48,17 @@ services:
       LEADWIRE_DATABASE_HOST: leadwire-mongodb
       LEADWIRE_DATABASE_PORT: 27017
       LEADWIRE_DATABASE_USER: admin
-      LEADWIRE_DATABASE_PASSWORD: "${LEADWIRE_DATABASE_PASSWORD}" 
+      LEADWIRE_DATABASE_PASSWORD: admin 
       LEADWIRE_APP_DOMAIN: apm.leadwire.io
       LEADWIRE_APP_SCHEME: https
       LEADWIRE_SUPER_USER_ADMIN_NAME: admin
-      LEADWIRE_MAILER_HOST: "${LEADWIRE_MAILER_HOST}"
-      LEADWIRE_MAILER_PORT: "${LEADWIRE_MAILER_PORT}"
-      LEADWIRE_MAILER_TRANSPORT: "${LEADWIRE_MAILER_TRANSPORT}"
-      LEADWIRE_MAILER_USER: "${LEADWIRE_MAILER_USER}"
-      LEADWIRE_MAILER_ENCRYPTION: "${LEADWIRE_MAILER_ENCRYPTION}"
-      LEADWIRE_MAILER_PASSWORD: "${LEADWIRE_MAILER_PASSWORD}" 
-      LEADWIRE_JWT_TOKEN_SECRET: "${LEADWIRE_JWT_TOKEN_SECRET}"
+      LEADWIRE_MAILER_HOST: smtp.gmail.com
+      LEADWIRE_MAILER_PORT: 465
+      LEADWIRE_MAILER_TRANSPORT: gmail
+      LEADWIRE_MAILER_USER: wassim.dhib@leadwire.io
+      LEADWIRE_MAILER_ENCRYPTION: ssl
+      LEADWIRE_MAILER_PASSWORD: _pass_
+      LEADWIRE_JWT_TOKEN_SECRET: _token
       LEADWIRE_KIBANA_HOST: http://leadwire-kibana
       LEADWIRE_KIBANA_PORT: 5601
       LEADWIRE_KIBANA_IFRAME_HOST: https://kibana.leadwire.io
@@ -66,7 +66,7 @@ services:
       LEADWIRE_KIBANA_ADMIN_USERNAME: admin
       LEADWIRE_KIBANA_ADMIN_UUID: admin
       LEADWIRE_ES_USERNAME: admin
-      LEADWIRE_ES_PASSWORD: "${LEADWIRE_ES_PASSWORD}"
+      LEADWIRE_ES_PASSWORD: admin
       LEADWIRE_ES_HOST: https://leadwire-node1
       LEADWIRE_ES_PORT: 9200
       LEADWIRE_SOCKET_IO_PORT: 443
@@ -78,7 +78,7 @@ services:
       LEADWIRE_LDAP_HOST: leadwire-ldap
       LEADWIRE_LDAP_PORT: 389
       LEADWIRE_LDAP_DN_USER: cn=admin,dc=leadwire,dc=io
-      LEADWIRE_LDAP_PASSWORD: "${LEADWIRE_LDAP_PASSWORD}"
+      LEADWIRE_LDAP_PASSWORD: admin
       LEADWIRE_JENKINS_URL: unused
       LEADWIRE_GITHUB_CLIENT_SECRET: unused
       LEADWIRE_GITHUB_CLIENT_ID: unused
@@ -104,9 +104,10 @@ services:
       ES_HOSTNAME: es.leadwire.io
       LOGLEVEL: info
     volumes:
-      - /etc/letsencrypt/:/etc/letsencrypt/
+      - ./cert:/etc/letsencrypt/
       - ./.docker/leadwire-core/etc/nginx/conf.d/ssl.conf.inc:/etc/nginx/conf.d/ssl.conf.inc
       - leadwire-coredata:/var/lib/lemonldap-ng/conf/
+      - ./.docker/leadwire-core/etc/nginx/conf.d/es-nginx.conf:/etc/nginx/conf.d/es-nginx.conf
     networks:
       - leadwire-net
   leadwire-ldap:
@@ -136,18 +137,18 @@ services:
     image: mongo:3.4
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_INITDB_ROOT_PASSWORD}"
+      MONGO_INITDB_ROOT_PASSWORD: admin
     ports:
       - 27017:27017
     volumes:
       - leadwire-mongodata:/data/db/
     networks:
       - leadwire-net
-  leadwire-node0:
+  leadwire-node1:
     image: opensearchproject/opensearch:1.1.0
     environment:
       - cluster.name=leadwire-cluster
-      - node.name=leadwire-node0
+      - node.name=leadwire-node1
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
       - plugins.security.unsupported.restapi.allow_securityconfig_modification=true
