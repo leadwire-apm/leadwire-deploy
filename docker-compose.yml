@@ -5,7 +5,7 @@ services:
 ### FREE PLACEMENT ###
 
   leadwire-portail-ui:
-    image: leadwire/apm-leadwire-portail-ui:1.0.8
+    image: leadwire/apm-leadwire-portail-ui:latest
     deploy:
       replicas: 1 
     networks:
@@ -29,7 +29,7 @@ services:
     networks:
       - leadwire-net
   leadwire-portail:
-    image: leadwire/apm-leadwire-portail:1.0.10
+    image: leadwire/apm-leadwire-portail:latest
     deploy:
       replicas: 1
     environment:
@@ -91,7 +91,7 @@ services:
 ### PERSISTENT DATA VOLUMES ###
 
   leadwire-core:
-    image: leadwire/apm-leadwire-core:1.0.7-4
+    image: leadwire/apm-leadwire-core:latest
     ports:
       - 80:80
       - 443:443
@@ -156,24 +156,9 @@ services:
       placement:
          constraints:
             - node.hostname == ${HOST1}
-  leadwire-node0:
-    image: opensearchproject/opensearch:1.1.0
-    environment:
-      - cluster.name=leadwire-cluster
-      - node.name=leadwire-node0
-      - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-      - plugins.security.unsupported.restapi.allow_securityconfig_modification=true
-    volumes:
-      - leadwire-data0:/usr/share/elasticsearch/data
-    networks:
-      - leadwire-net
-    deploy:
-      placement:
-         constraints:
-            - node.hostname == ${HOST1}
   leadwire-node1:
     image: opensearchproject/opensearch:1.1.0
+    container_name: leadwire-node1
 #leadwire/apm-leadwire-odfe:1.0.1.2
     environment:
       - cluster.name=leadwire-cluster
@@ -181,12 +166,12 @@ services:
       - node.master=true
       - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
       - cluster.initial_master_nodes=leadwire-node1
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - plugins.security.unsupported.restapi.allow_securityconfig_modification=true
 #opendistro_security.unsupported.restapi.allow_securityconfig_modification=true
       - indices.breaker.total.use_real_memory=false
     volumes:
-      - leadwire-data1:/usr/share/elasticsearch/data
+      - leadwire-data1:/usr/share/opensearch/data
       - leadwire-backup:/esbackup/
     networks:
       - leadwire-net
@@ -203,10 +188,10 @@ services:
       - node.master=true
       - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
       - cluster.initial_master_nodes=leadwire-node1
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - indices.breaker.total.use_real_memory=false
     volumes:
-      - leadwire-data2:/usr/share/elasticsearch/data
+      - leadwire-data2:/usr/share/opensearch/data
       - leadwire-backup:/esbackup/
     networks:
       - leadwire-net
@@ -223,10 +208,10 @@ services:
       - node.master=false
       - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
       - cluster.initial_master_nodes=leadwire-node1
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - indices.breaker.total.use_real_memory=false
     volumes:
-      - leadwire-data3:/usr/share/elasticsearch/data
+      - leadwire-data3:/usr/share/opensearch/data
       - leadwire-backup:/esbackup/
     networks:
       - leadwire-net
