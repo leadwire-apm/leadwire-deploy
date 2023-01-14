@@ -1,0 +1,274 @@
+version: '3.4'
+services:
+
+
+### FREE PLACEMENT ###
+
+  leadwire-portail-ui:
+    image: leadwire/apm-leadwire-portail-ui:latest
+    deploy:
+      replicas: 1 
+    networks:
+      - leadwire-net
+  leadwire-socket-io:
+    image: leadwire/apm-leadwire-socket.io:1.0.0
+    environment:
+      LEADWIRE_SSL_KEY: /certificates/server.key
+      LEADWIRE_SSL_CERT: /certificates/server.pem
+      LEADWIRE_SOCKET_IO_PORT: 9000
+    networks:
+      - leadwire-net
+
+  leadwire-nginx:
+    image: nginx:latest
+    ports:
+      - 8443:443
+    volumes:
+      - /tmp/.docker/leadwire-nginx/:/etc/nginx/conf.d/
+      - /tmp/.docker/leadwire-nginx/certbot/conf/:/etc/nginx/ssl/:ro
+    networks:
+      - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST3}
+
+
+  leadwire-kibana:
+    image: opensearchproject/opensearch-dashboards:1.3.0
+    environment:
+      ELASTICSEARCH_URL: https://leadwire-node1:9200
+      ELASTICSEARCH_HOSTS: https://leadwire-node1:9200
+    volumes:
+      - /tmp/.docker/leadwire-kibana/usr/share/kibana/config/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+    networks:
+      - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST3}
+  leadwire-portail:
+    image: leadwire/apm-leadwire-portail:latest
+    deploy:
+      replicas: 1
+    environment:
+      LEADWIRE_ADMIN_PASSWORD: "${LEADWIRE_ADMIN_PASSWORD}"
+      LEADWIRE_ADMIN_EMAIL: "${LEADWIRE_ADMIN_EMAIL}"
+      LEADWIRE_CLUSTER_NAME: leadwire-cluster
+      LEADWIRE_CLUSTER_VERSION: 7.10.0
+      LEADWIRE_SETUP_CLUSTER: 'true'
+      LEADWIRE_SETUP_DEMO: 'true'
+      LEADWIRE_SETUP_LDAP: 'true'
+      LEADWIRE_ISM_ROLLOVER_SETUP: 'false'
+      LEADWIRE_ISM_DELETE_MIN_INDEX_AGE: 7d
+      LEADWIRE_ISM_MIN_SIZE: 5gb
+      LEADWIRE_ISM_MIN_DOC_COUNT: 1000000
+      LEADWIRE_ISM_MIN_INDEX_AGE: 7d
+      LEADWIRE_DATABASE_NAME: leadwire
+      LEADWIRE_DATABASE_HOST: leadwire-mongodb
+      LEADWIRE_DATABASE_PORT: 27017
+      LEADWIRE_DATABASE_USER: admin
+      LEADWIRE_DATABASE_PASSWORD: "${LEADWIRE_DATABASE_PASSWORD}" 
+      LEADWIRE_APP_DOMAIN: apm.leadwire.io
+      LEADWIRE_APP_SCHEME: https
+      LEADWIRE_SUPER_USER_ADMIN_NAME: admin
+      LEADWIRE_MAILER_HOST: "${LEADWIRE_MAILER_HOST}"
+      LEADWIRE_MAILER_PORT: "${LEADWIRE_MAILER_PORT}"
+      LEADWIRE_MAILER_TRANSPORT: "${LEADWIRE_MAILER_TRANSPORT}"
+      LEADWIRE_MAILER_USER: "${LEADWIRE_MAILER_USER}"
+      LEADWIRE_MAILER_ENCRYPTION: "${LEADWIRE_MAILER_ENCRYPTION}"
+      LEADWIRE_MAILER_PASSWORD: "${LEADWIRE_MAILER_PASSWORD}" 
+      LEADWIRE_JWT_TOKEN_SECRET: "${LEADWIRE_JWT_TOKEN_SECRET}"
+      LEADWIRE_KIBANA_HOST: http://leadwire-kibana
+      LEADWIRE_KIBANA_PORT: 5601
+      LEADWIRE_KIBANA_IFRAME_HOST: https://kibana.leadwire.io
+      LEADWIRE_KIBANA_IFRAME_PORT: 443
+      LEADWIRE_KIBANA_ADMIN_USERNAME: admin
+      LEADWIRE_KIBANA_ADMIN_UUID: admin
+      LEADWIRE_ES_USERNAME: admin
+      LEADWIRE_ES_PASSWORD: "${LEADWIRE_ES_PASSWORD}"
+      LEADWIRE_ES_HOST: https://leadwire-node1
+      LEADWIRE_ES_PORT: 9200
+      LEADWIRE_SOCKET_IO_PORT: 443
+      LEADWIRE_SOCKET_DOMAIN: apm.leadwire.io
+      LEADWIRE_SOCKET_SCHEME: https
+      LEADWIRE_LOGOUT_URL: https://auth.leadwire.io/?logout=1
+      LEADWIRE_PLATFORM_NAME: leadwire
+      LEADWIRE_LOGIN_METHOD: proxy
+      LEADWIRE_LDAP_HOST: leadwire-ldap
+      LEADWIRE_LDAP_PORT: 389
+      LEADWIRE_LDAP_DN_USER: cn=admin,dc=leadwire,dc=io
+      LEADWIRE_LDAP_PASSWORD: "${LEADWIRE_LDAP_PASSWORD}"
+      LEADWIRE_JENKINS_URL: unused
+      LEADWIRE_GITHUB_CLIENT_SECRET: unused
+      LEADWIRE_GITHUB_CLIENT_ID: unused
+      LEADWIRE_STRIPE_SECRET_KEY: unused
+      LEADWIRE_STRIPE_ENABLED: 'false'
+    networks:
+      - leadwire-net
+
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST1}
+
+### PERSISTENT DATA VOLUMES ###
+
+
+
+  leadwire-core:
+    image: leadwire/apm-leadwire-core:latest
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      SSODOMAIN: leadwire.io
+      PORTAL_HOSTNAME: auth.leadwire.io
+      MANAGER_HOSTNAME: manager.leadwire.io
+      HANDLER_HOSTNAME: reload.leadwire.io
+      APM_HOSTNAME: apm.leadwire.io
+      KIBANA_HOSTNAME: kibana.leadwire.io
+      ES_HOSTNAME: es.leadwire.io
+      LOGLEVEL: info
+    volumes:
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+#      - /etc/letsencrypt/:/etc/letsencrypt/
+      - ./.docker/leadwire-core/etc/nginx/conf.d/ssl.conf.inc:/etc/nginx/conf.d/ssl.conf.inc
+      - leadwire-coredata:/var/lib/lemonldap-ng/conf/
+    networks:
+      - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST1}
+  leadwire-ldap:
+    image: leadwire/apm-leadwire-ldap:1.0.4
+    ports:
+      - 389:389
+#    volumes:
+#      - leadwire-ldapdata:/var/lib/ldap
+    networks:
+      - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST1}
+#  leadwire-alertmanager:
+#    image: prom/alertmanager:latest 
+#    volumes:
+#      - ./.docker/leadwire-alertmanager/etc/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+#      - leadwire-alertmanagerdata:/etc/alertmanager/data/
+#    command:
+#      - '--config.file=/etc/alertmanager/alertmanager.yml'
+#      - '--web.external-url=https://alert.leadwire.io'
+#    networks:
+#      - leadwire-net
+#    deploy:
+#      placement:
+#         constraints:
+#            - node.hostname == ${HOST1}
+#      replicas: 0
+  leadwire-mongodb:
+    image: mongo:3.6
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_INITDB_ROOT_PASSWORD}"
+    ports:
+      - 27017:27017
+    volumes:
+      - leadwire-mongodata:/data/db/
+      - leadwire-backup:/backup/
+    networks:
+      - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST1}
+  leadwire-node1:
+    image: opensearchproject/opensearch:1.3.0
+    environment:
+      - cluster.name=leadwire-cluster
+      - node.name=leadwire-node1
+      - node.master=true
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
+      - plugins.security.unsupported.restapi.allow_securityconfig_modification=true
+#opendistro_security.unsupported.restapi.allow_securityconfig_modification=true
+      - indices.breaker.total.use_real_memory=false
+    volumes:
+      - leadwire-data1:/usr/share/opensearch/data
+      - leadwire-backup:/esbackup/
+    networks:
+      - leadwire-net
+    deploy:
+      placement: 
+         constraints: 
+            - node.hostname == ${HOST3}
+  leadwire-node2:
+    image: opensearchproject/opensearch:1.3.0
+    environment:
+      - cluster.name=leadwire-cluster
+      - node.name=leadwire-node2
+      - node.master=true
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
+      - indices.breaker.total.use_real_memory=false
+    volumes:
+      - leadwire-data2:/usr/share/opensearch/data
+      - leadwire-backup:/esbackup/
+    networks:
+      - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST3}
+  leadwire-node3:
+    image: opensearchproject/opensearch:1.3.0
+    environment:
+      - cluster.name=leadwire-cluster
+      - node.name=leadwire-node3
+      - node.master=false
+      - discovery.seed_hosts=leadwire-node1,leadwire-node2,leadwire-node3
+      - cluster.initial_master_nodes=leadwire-node1
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
+      - indices.breaker.total.use_real_memory=false
+    volumes:
+      - leadwire-data3:/usr/share/opensearch/data
+      - leadwire-backup:/esbackup/
+    networks:
+      - leadwire-net
+    deploy:
+      placement:
+         constraints:
+            - node.hostname == ${HOST3}
+#  leadwire-grafana:
+#    image: grafana/grafana:latest
+#    volumes:
+#      - leadwire-grafanadata:/var/lib/grafana
+#      - .docker/leadwire-grafana/etc/grafana/grafana.ini:/etc/grafana/grafana.ini
+#    networks:
+#      - leadwire-net
+#    deploy:
+#      placement:
+#         constraints:
+#            - node.hostname == ${HOST1}
+#      replicas: 0 
+
+    
+volumes:
+  leadwire-data0:
+  leadwire-data1:
+  leadwire-data2:
+  leadwire-data3:
+  leadwire-backup:
+  leadwire-mongodata:
+#  leadwire-grafanadata:
+#  leadwire-alertmanagerdata:
+  leadwire-ldapdata:
+  leadwire-coredata:
+networks:
+  leadwire-net:
+

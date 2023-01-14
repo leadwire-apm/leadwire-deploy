@@ -1,4 +1,4 @@
 #!/bin/sh
 
-export $(cat .docker/.env.prod) > /dev/null 2>&1; docker stack deploy leadwire --compose-file docker-compose.yml
+export $(cat .docker/.env.prod) > /dev/null 2>&1; docker stack deploy leadwire --compose-file leadwire.yml
 
